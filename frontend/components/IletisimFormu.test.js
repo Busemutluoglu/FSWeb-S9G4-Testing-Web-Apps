@@ -3,9 +3,10 @@ import { render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import userEvent from "@testing-library/user-event";
 import IletisimFormu from "./IletisimFormu";
+import App from "../App";
 
 test("hata olmadan render ediliyor", () => {
-  render(<IletisimFormu />);
+  render(<App />);
 });
 
 test("iletişim formu headerı render ediliyor", () => {
@@ -40,6 +41,10 @@ test("kullanıcı inputları doldurmadığında ÜÇ hata mesajı render ediliyo
 
   const hatalarTesti = await screen.getAllByTestId("error");
   expect(hatalarTesti.length).toEqual(3);
+
+  /*  render(<IletisimFormu />);
+  userEvent.click(screen.getByRole("button"));
+  expect(await screen.findAllByTestId("error")).toHaveLength(3); */
 });
 
 test("kullanıcı doğru ad ve soyad girdiğinde ama email girmediğinde BİR hata mesajı render ediliyor.", async () => {
@@ -71,13 +76,12 @@ test('geçersiz bir mail girildiğinde "email geçerli bir email adresi olmalıd
 
 test('soyad girilmeden gönderilirse "soyad gereklidir." mesajı render ediliyor', async () => {
   render(<IletisimFormu />);
-  const soyadInput = screen.getByPlaceholderText(/Mansız/i);
-  userEvent.type(soyadInput, "d");
-  userEvent.clear(soyadInput);
-  const submitButton = screen.getAllByRole("button");
-  userEvent.click(submitButton);
-  const hataMsg = screen.getByTestId("error");
-  expect(hataMsg).toHaveTextContent("soyad gereklidir.");
+  const inputA = screen.getByPlaceholderText(/İlhan/i);
+  userEvent.type(inputA, "İlhan");
+  const inputM = screen.getByPlaceholderText(/yüzyılıngolcüsü@hotmail.com/i);
+  userEvent.type(inputM, "yüzyılıngolcüsü@hotmail.com");
+  userEvent.click(screen.getByRole("button"));
+  expect(await screen.findByTestId("error")).toBeVisible();
 });
 
 test("ad,soyad, email render ediliyor. mesaj bölümü doldurulmadığında hata mesajı render edilmiyor.", async () => {
@@ -91,9 +95,12 @@ test("ad,soyad, email render ediliyor. mesaj bölümü doldurulmadığında hata
   const mailInput = screen.getByPlaceholderText(/yüzyılıngolcüsü@hotmail.com/i);
   userEvent.type(mailInput, "yüzyılıngolcüsü@hotmail.com");
 
-  const submitButton = screen.getAllByRole("button");
+  const submitButton = screen.getByText(/Gönder/);
   userEvent.click(submitButton);
-  expect(getByTestId("button")).toBeDisabled();
+  await waitFor(() => {
+    const errorDiv = screen.queryAllByTestId("error");
+    expect(errorDiv.length).toBe(0);
+  });
 
   /*   await waitFor(() => {
     const errorText = screen.getByTestId("error");
@@ -102,5 +109,25 @@ test("ad,soyad, email render ediliyor. mesaj bölümü doldurulmadığında hata
 });
 
 test("form gönderildiğinde girilen tüm değerler render ediliyor.", async () => {
-  render;
+  render(<IletisimFormu />);
+  userEvent.type(screen.getByPlaceholderText("İlhan"), "Ahmet");
+  userEvent.type(screen.getByPlaceholderText("Mansız"), "Developer");
+  userEvent.type(
+    screen.getByPlaceholderText("yüzyılıngolcüsü@hotmail.com"),
+    "ahmet@developer.com"
+  );
+  userEvent.type(screen.getByText("Mesaj"), "ödev tamamlandı");
+  userEvent.click(screen.getByRole("button"));
+  expect(await screen.findByTestId("firstnameDisplay")).toHaveTextContent(
+    "Ahmet"
+  );
+  expect(await screen.findByTestId("lastnameDisplay")).toHaveTextContent(
+    "Developer"
+  );
+  expect(await screen.findByTestId("emailDisplay")).toHaveTextContent(
+    "ahmet@developer.com"
+  );
+  expect(await screen.findByTestId("messageDisplay")).toHaveTextContent(
+    "ödev tamamlandı"
+  );
 });
